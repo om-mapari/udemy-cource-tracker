@@ -1,4 +1,7 @@
 import React, { useEffect, useState } from "react";
+import Header from "./components/Header";
+import ProgressBar from "./components/ProgressBar";
+import LectureTable from "./components/LectureTable";
 
 function App() {
   const [courseContent, setCourseContent] = useState([]);
@@ -6,13 +9,13 @@ function App() {
     const saved = localStorage.getItem("completedLectures");
     return saved ? JSON.parse(saved) : [];
   });
-  const [bookmarkedLectures, setBookmarkedLectures] = useState(() => {
-    const saved = localStorage.getItem("bookmarkedLectures");
-    return saved ? JSON.parse(saved) : [];
-  });
   const [darkMode, setDarkMode] = useState(() => {
     const stored = localStorage.getItem("darkMode");
     return stored !== null ? stored === "true" : true;
+  });
+  const [bookmarkedLectures, setBookmarkedLectures] = useState(() => {
+    const saved = localStorage.getItem("bookmarkedLectures");
+    return saved ? JSON.parse(saved) : [];
   });
   const [showOnlyFavorites, setShowOnlyFavorites] = useState(false);
   const [collapsedChapters, setCollapsedChapters] = useState({});
@@ -22,32 +25,21 @@ function App() {
     fetch("/data.json")
       .then((res) => res.json())
       .then((data) => {
-        const results = data.results || [];
         const grouped = [];
         let currentChapter = null;
-
-        for (const item of results) {
+        for (const item of data.results || []) {
           if (item._class === "chapter") {
-            currentChapter = {
-              id: item.id,
-              title: item.title,
-              object_index: item.object_index,
-              lectures: [],
-            };
+            currentChapter = { ...item, lectures: [] };
             grouped.push(currentChapter);
           } else if (item._class === "lecture" && currentChapter) {
             currentChapter.lectures.push(item);
           }
         }
-
         setCourseContent(grouped);
-        const initialCollapsed = {};
-        grouped.forEach((ch) => {
-          initialCollapsed[ch.id] = false;
-        });
-        setCollapsedChapters(initialCollapsed);
-      })
-      .catch((err) => console.error("Failed to load data:", err));
+        const initCollapsed = {};
+        grouped.forEach((ch) => (initCollapsed[ch.id] = false));
+        setCollapsedChapters(initCollapsed);
+      });
   }, []);
 
   useEffect(() => {
@@ -68,170 +60,69 @@ function App() {
     );
   };
 
-  const toggleBookmark = (lectureId) => {
-    setBookmarkedLectures((prev) =>
-      prev.includes(lectureId) ? prev.filter((id) => id !== lectureId) : [...prev, lectureId]
-    );
-  };
-
   const toggleChapterCompletion = (chapterId, isComplete) => {
-    const lectureIds = courseContent
-      .find((chapter) => chapter.id === chapterId)
-      .lectures.map((lec) => lec.id);
+    const chapter = courseContent.find((ch) => ch.id === chapterId);
+    const lectureIds = chapter.lectures.map((lec) => lec.id);
     setCompletedLectures((prev) =>
       isComplete ? [...new Set([...prev, ...lectureIds])] : prev.filter((id) => !lectureIds.includes(id))
     );
   };
 
   const toggleAllCollapse = () => {
-    const newCollapsed = {};
-    courseContent.forEach((chapter) => {
-      newCollapsed[chapter.id] = !allCollapsed;
-    });
-    setCollapsedChapters(newCollapsed);
+    const newState = {};
+    courseContent.forEach((ch) => (newState[ch.id] = !allCollapsed));
+    setCollapsedChapters(newState);
     setAllCollapsed(!allCollapsed);
   };
 
-  const totalTimeForChapter = (lectures) =>
-    lectures.reduce((total, lec) => total + (lec.asset?.time_estimation || 0), 0);
+  const toggleBookmark = (lectureId) => {
+    setBookmarkedLectures((prev) =>
+      prev.includes(lectureId) ? prev.filter((id) => id !== lectureId) : [...prev, lectureId]
+    );
+  };
 
-  const totalLectures = courseContent.reduce((acc, chapter) => acc + chapter.lectures.length, 0);
+  const totalLectures = courseContent.reduce((acc, ch) => acc + ch.lectures.length, 0);
   const completedCount = completedLectures.length;
-  const completionPercent = totalLectures
-    ? Math.round((completedCount / totalLectures) * 100)
-    : 0;
-
-  const remainingTime = courseContent
-    .flatMap((ch) => ch.lectures)
-    .filter((lec) => !completedLectures.includes(lec.id))
-    .reduce((acc, lec) => acc + (lec.asset?.time_estimation || 0), 0);
+  const completionPercent = totalLectures ? Math.round((completedCount / totalLectures) * 100) : 0;
+  const timeLeftMinutes = Math.ceil(
+    courseContent
+      .flatMap((ch) => ch.lectures)
+      .filter((lec) => !completedLectures.includes(lec.id))
+      .reduce((acc, lec) => acc + (lec.asset?.time_estimation || 0), 0) / 60
+  );
 
   return (
-    <div className={`min-h-screen ${darkMode ? "dark bg-gray-900" : "bg-white"} transition-colors duration-500`}>
-      <header className="sticky top-0 z-20 bg-white dark:bg-gray-900 shadow-md p-4 flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">
-          📚 Udemy Tracker
+    <div className={`min-h-screen ${darkMode ? "dark bg-gray-900" : "bg-white"}`}>
+      <div className="p-4 max-w-5xl mx-auto bg-gray-50 dark:bg-gray-900 shadow-lg rounded-lg text-gray-800 dark:text-gray-100">
+        <Header
+          darkMode={darkMode}
+          setDarkMode={setDarkMode}
+          allCollapsed={allCollapsed}
+          toggleAllCollapse={toggleAllCollapse}
+          showOnlyFavorites={showOnlyFavorites}
+          setShowOnlyFavorites={setShowOnlyFavorites}
+        />
+        <ProgressBar
+          completedCount={completedCount}
+          totalLectures={totalLectures}
+          completionPercent={completionPercent}
+          timeLeftMinutes={timeLeftMinutes}
+        />
+        <h1 className="text-4xl font-bold mb-8 text-center text-gray-800 dark:text-gray-100">
+          📚 Udemy Course Tracker ✅
         </h1>
-        <div className="flex gap-2">
-          <button onClick={() => setDarkMode(!darkMode)} className="btn-control">
-            {darkMode ? "☀️ Light" : "🌙 Dark"}
-          </button>
-          <button onClick={toggleAllCollapse} className="btn-control">
-            {allCollapsed ? "📂 Expand All" : "📁 Collapse All"}
-          </button>
-          <button onClick={() => setShowOnlyFavorites(!showOnlyFavorites)} className="btn-control">
-            {showOnlyFavorites ? "📖 Show All" : "⭐️ Favorites"}
-          </button>
-        </div>
-      </header>
-
-      <main className="p-4 max-w-5xl mx-auto text-gray-800 dark:text-gray-100">
-        <section className="mb-6 text-center">
-          <h2 className="text-xl font-semibold mb-2">
-            ✅ {completedCount}/{totalLectures} completed ({completionPercent}%)
-          </h2>
-          <div className="w-full bg-gray-300 dark:bg-gray-700 rounded-full h-4">
-            <div
-              className="bg-green-500 h-4 rounded-full transition-all duration-300"
-              style={{ width: `${completionPercent}%` }}
-            ></div>
-          </div>
-          <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">
-            ⏱ Time left: {Math.ceil(remainingTime / 60)} mins
-          </p>
-        </section>
-
-        <div className="overflow-x-auto">
-          <table className="min-w-full table-auto border-separate border-spacing-y-2">
-            <thead>
-              <tr className="text-sm font-medium bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-200">
-                <th className="px-4 py-2 text-left">Lecture/Chapter</th>
-                <th className="px-4 py-2 text-left">Time</th>
-                <th className="px-4 py-2 text-left">Done</th>
-              </tr>
-            </thead>
-            <tbody>
-              {courseContent.map((chapter) => {
-                const isCollapsed = collapsedChapters[chapter.id];
-                const chapterTime = totalTimeForChapter(chapter.lectures);
-                const allComplete = chapter.lectures.every((lec) => completedLectures.includes(lec.id));
-                return (
-                  <React.Fragment key={chapter.id}>
-                    <tr className="bg-blue-100 dark:bg-blue-900 text-lg font-semibold">
-                      <td
-                        colSpan="1"
-                        onClick={() =>
-                          setCollapsedChapters((prev) => ({
-                            ...prev,
-                            [chapter.id]: !prev[chapter.id],
-                          }))
-                        }
-                        className="px-4 py-2 cursor-pointer"
-                      >
-                        {isCollapsed ? "📁" : "📂"} {chapter.title}
-                      </td>
-                      <td className="px-4 py-2 text-sm text-blue-700 dark:text-blue-200">
-                        {Math.ceil(chapterTime / 60)} min
-                      </td>
-                      <td className="px-4 py-2">
-                        <input
-                          type="checkbox"
-                          checked={allComplete}
-                          onChange={(e) => {
-                            e.stopPropagation();
-                            toggleChapterCompletion(chapter.id, !allComplete);
-                          }}
-                          className="h-5 w-5 text-green-500"
-                        />
-                      </td>
-                    </tr>
-                    {!isCollapsed &&
-                      chapter.lectures
-                        .filter((lec) => !showOnlyFavorites || bookmarkedLectures.includes(lec.id))
-                        .map((lec) => {
-                          const completed = completedLectures.includes(lec.id);
-                          return (
-                            <tr
-                              key={lec.id}
-                              className={`transition duration-200 ${
-                                completed
-                                  ? "bg-green-100 dark:bg-green-900 hover:bg-green-200 dark:hover:bg-green-800"
-                                  : "bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700"
-                              }`}
-                            >
-                              <td className="px-4 py-2">
-                                <span
-                                  className="cursor-pointer mr-2"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    toggleBookmark(lec.id);
-                                  }}
-                                >
-                                  {bookmarkedLectures.includes(lec.id) ? "⭐️" : "☆"}
-                                </span>
-                                🎥 {lec.title}
-                              </td>
-                              <td className="px-4 py-2 text-sm">
-                                {Math.ceil((lec.asset?.time_estimation || 0) / 60)} min
-                              </td>
-                              <td className="px-4 py-2">
-                                <input
-                                  type="checkbox"
-                                  checked={completed}
-                                  onChange={() => toggleCompletion(lec.id)}
-                                  className="h-5 w-5 text-green-500"
-                                />
-                              </td>
-                            </tr>
-                          );
-                        })}
-                  </React.Fragment>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </main>
+        <LectureTable
+          courseContent={courseContent}
+          collapsedChapters={collapsedChapters}
+          setCollapsedChapters={setCollapsedChapters}
+          completedLectures={completedLectures}
+          toggleCompletion={toggleCompletion}
+          toggleChapterCompletion={toggleChapterCompletion}
+          bookmarkedLectures={bookmarkedLectures}
+          toggleBookmark={toggleBookmark}
+          showOnlyFavorites={showOnlyFavorites}
+        />
+      </div>
     </div>
   );
 }
