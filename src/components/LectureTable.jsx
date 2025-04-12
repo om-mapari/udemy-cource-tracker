@@ -13,7 +13,7 @@ const LectureTable = ({
 }) => {
   const totalTimeForChapter = (lectures) =>
     lectures.reduce((total, lec) => total + (lec.asset?.time_estimation || 0), 0);
-
+  console.log('Toggling bookmark')
   return (
     <div className="overflow-x-auto px-4 py-3">
       <table className="min-w-full table-auto">
@@ -76,15 +76,15 @@ const LectureTable = ({
                           } transition-all duration-200`}
                         >
                           <td className="px-4 py-2 text-gray-700 dark:text-gray-100">
-                            <span
-                              className="cursor-pointer mr-2"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                toggleBookmark(lec.id);
-                              }}
-                            >
-                              {bookmarkedLectures.includes(lec.id) ? "⭐️" : "☆"}
-                            </span>
+                          <span
+  className="cursor-pointer mr-2"
+  onClick={(e) => {
+    e.stopPropagation(); // prevent parent click
+    toggleBookmark(lec.id);
+  }}
+>
+  {bookmarkedLectures.includes(lec.id) ? "⭐️" : "☆"}
+</span>
                             🎥 {lec.title}
                           </td>
                           <td className="px-4 py-2 text-gray-500 dark:text-gray-300">

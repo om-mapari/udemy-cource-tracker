@@ -2,6 +2,8 @@ import React, { useEffect, useState } from "react";
 import Header from "./components/Header";
 import ProgressBar from "./components/ProgressBar";
 import LectureTable from "./components/LectureTable";
+import { Toaster } from 'react-hot-toast';
+import toast from 'react-hot-toast';
 
 function App() {
   const [courseContent, setCourseContent] = useState([]);
@@ -55,10 +57,17 @@ function App() {
   }, [darkMode]);
 
   const toggleCompletion = (lectureId) => {
-    setCompletedLectures((prev) =>
-      prev.includes(lectureId) ? prev.filter((id) => id !== lectureId) : [...prev, lectureId]
-    );
+    setCompletedLectures((prev) => {
+      const isCompleted = prev.includes(lectureId);
+      const updated = isCompleted
+        ? prev.filter((id) => id !== lectureId)
+        : [...prev, lectureId];
+  
+      toast(isCompleted ? "Lecture marked incomplete ⛔️" : "Lecture marked complete ✅");
+      return updated;
+    });
   };
+  
 
   const toggleChapterCompletion = (chapterId, isComplete) => {
     const chapter = courseContent.find((ch) => ch.id === chapterId);
@@ -76,24 +85,42 @@ function App() {
   };
 
   const toggleBookmark = (lectureId) => {
-    setBookmarkedLectures((prev) =>
-      prev.includes(lectureId) ? prev.filter((id) => id !== lectureId) : [...prev, lectureId]
-    );
+    setBookmarkedLectures((prev) => {
+      const isBookmarked = prev.includes(lectureId);
+      const updated = isBookmarked
+        ? prev.filter((id) => id !== lectureId)
+        : [...prev, lectureId];
+  
+      toast(isBookmarked ? "Removed from bookmarks ❌" : "Lecture bookmarked ⭐️");
+      return updated;
+    });
   };
+  
 
   const totalLectures = courseContent.reduce((acc, ch) => acc + ch.lectures.length, 0);
   const completedCount = completedLectures.length;
   const completionPercent = totalLectures ? Math.round((completedCount / totalLectures) * 100) : 0;
-  const timeLeftMinutes = Math.ceil(
-    courseContent
-      .flatMap((ch) => ch.lectures)
-      .filter((lec) => !completedLectures.includes(lec.id))
-      .reduce((acc, lec) => acc + (lec.asset?.time_estimation || 0), 0) / 60
+  const allLectures = courseContent.flatMap((ch) => ch.lectures);
+
+  const totalTimeSeconds = allLectures.reduce(
+    (acc, lec) => acc + (lec.asset?.time_estimation || 0),
+    0
   );
+  
+  const completedTimeSeconds = allLectures
+    .filter((lec) => completedLectures.includes(lec.id))
+    .reduce((acc, lec) => acc + (lec.asset?.time_estimation || 0), 0);
+  
+  const totalTimeHours = (totalTimeSeconds / 3600).toFixed(1);
+  const completedTimeHours = (completedTimeSeconds / 3600).toFixed(1);
+  
+  
 
   return (
     <div className={`min-h-screen ${darkMode ? "dark bg-gray-900" : "bg-white"}`}>
       <div className="p-4 max-w-5xl mx-auto bg-gray-50 dark:bg-gray-900 shadow-lg rounded-lg text-gray-800 dark:text-gray-100">
+      <Toaster position="top-right" toastOptions={{ duration: 2000 }} />
+
         <Header
           darkMode={darkMode}
           setDarkMode={setDarkMode}
@@ -102,12 +129,14 @@ function App() {
           showOnlyFavorites={showOnlyFavorites}
           setShowOnlyFavorites={setShowOnlyFavorites}
         />
-        <ProgressBar
-          completedCount={completedCount}
-          totalLectures={totalLectures}
-          completionPercent={completionPercent}
-          timeLeftMinutes={timeLeftMinutes}
-        />
+<ProgressBar
+  completedCount={completedCount}
+  totalLectures={totalLectures}
+  completionPercent={completionPercent}
+  completedTimeHours={completedTimeHours}
+  totalTimeHours={totalTimeHours}
+/>
+
         <h1 className="text-4xl font-bold mb-8 text-center text-gray-800 dark:text-gray-100">
           📚 Udemy Course Tracker ✅
         </h1>
