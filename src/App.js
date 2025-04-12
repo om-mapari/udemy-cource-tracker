@@ -8,8 +8,27 @@ function App() {
   });
 
   const [darkMode, setDarkMode] = useState(() => {
-    return localStorage.getItem("darkMode") === "true";
+    const stored = localStorage.getItem("darkMode");
+    return stored !== null ? stored === "true" : true; // default to dark mode
   });
+  
+  const [bookmarkedLectures, setBookmarkedLectures] = useState(() => {
+    const saved = localStorage.getItem("bookmarkedLectures");
+    return saved ? JSON.parse(saved) : [];
+  });
+  useEffect(() => {
+    localStorage.setItem("bookmarkedLectures", JSON.stringify(bookmarkedLectures));
+  }, [bookmarkedLectures]);
+
+  const toggleBookmark = (lectureId) => {
+    setBookmarkedLectures((prev) =>
+      prev.includes(lectureId)
+        ? prev.filter((id) => id !== lectureId)
+        : [...prev, lectureId]
+    );
+  };
+  
+  const [showOnlyFavorites, setShowOnlyFavorites] = useState(false);
 
   const [collapsedChapters, setCollapsedChapters] = useState({});
   const [allCollapsed, setAllCollapsed] = useState(false);
@@ -101,7 +120,7 @@ function App() {
       <div className={`min-h-screen ${darkMode ? "dark bg-gray-900" : "bg-white"}`}>
         <div className="p-4 max-w-5xl mx-auto bg-gray-50 dark:bg-gray-900 shadow-lg rounded-lg text-gray-800 dark:text-gray-100">
           {/* ... rest of your code ... */}
-        <div className="flex justify-between mb-4">
+          <div className="flex flex-wrap gap-4 mb-4">
           <button
             onClick={() => setDarkMode(!darkMode)}
             className="px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded shadow hover:bg-gray-300 dark:hover:bg-gray-600 transition"
@@ -114,12 +133,29 @@ function App() {
           >
             {allCollapsed ? "📂 Expand All" : "📁 Collapse All"}
           </button>
+
+          <button
+            onClick={() => setShowOnlyFavorites(!showOnlyFavorites)}
+            className="px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded shadow hover:bg-gray-300 dark:hover:bg-gray-600 transition"
+          >
+            {showOnlyFavorites ? "📖 Show All" : "⭐️ Show Favorites"}
+          </button>
+
         </div>
 
         {/* Sticky Progress */}
         <div className="mb-6 sticky top-0 bg-gray-50 dark:bg-gray-900 py-4 z-10">
           <h2 className="text-xl font-semibold text-center mb-2">
             Progress: {completedCount}/{totalLectures} lectures completed ({completionPercent}%)
+<p className="text-center text-md text-gray-600 dark:text-gray-300">
+  ⏱ Estimated time remaining: {Math.ceil(
+    courseContent
+      .flatMap((ch) => ch.lectures)
+      .filter((lec) => !completedLectures.includes(lec.id))
+      .reduce((acc, lec) => acc + (lec.asset?.time_estimation || 0), 0) / 60
+  )} minutes
+</p>
+
           </h2>
           <div className="w-full bg-gray-300 dark:bg-gray-700 rounded-full h-4">
             <div
@@ -152,18 +188,18 @@ function App() {
                 return (
                   <React.Fragment key={chapter.id}>
                     {/* Chapter Row */}
-                    <tr
-                      className="bg-blue-200 dark:bg-blue-900 font-semibold text-lg cursor-pointer"
-                      onClick={() =>
-                        setCollapsedChapters((prev) => ({
-                          ...prev,
-                          [chapter.id]: !prev[chapter.id],
-                        }))
-                      }
-                    >
-                      <td className="px-4 py-2 text-gray-700 dark:text-gray-100">
-                        {isCollapsed ? "▶️" : "🔽"} <strong>{chapter.title}</strong>
-                      </td>
+                    <tr className="bg-blue-200 dark:bg-blue-900 font-semibold text-lg">
+  <td
+    className="px-4 py-2 text-gray-700 dark:text-gray-100 cursor-pointer"
+    onClick={() =>
+      setCollapsedChapters((prev) => ({
+        ...prev,
+        [chapter.id]: !prev[chapter.id],
+      }))
+    }
+  >
+    {isCollapsed ? "📁" : "📂"} <strong>{chapter.title}</strong>
+  </td>
                       <td className="px-4 py-2 text-gray-500 dark:text-gray-300">
                         {Math.ceil(chapterTotalTime / 60)} min
                       </td>
@@ -182,7 +218,9 @@ function App() {
 
                     {/* Lecture Rows */}
                     {!isCollapsed &&
-                      chapter.lectures.map((lec) => {
+                        chapter.lectures
+                        .filter((lec) => !showOnlyFavorites || bookmarkedLectures.includes(lec.id))
+                        .map((lec) => {
                         const isCompleted = completedLectures.includes(lec.id);
                         return (
                           <tr
@@ -194,7 +232,16 @@ function App() {
                             } transition-all duration-200`}
                           >
                             <td className="px-4 py-2 text-gray-700 dark:text-gray-100">
-                              🎥 {lec.title}
+                            <span
+  className="cursor-pointer mr-2"
+  onClick={(e) => {
+    e.stopPropagation();
+    toggleBookmark(lec.id);
+  }}
+>
+  {bookmarkedLectures.includes(lec.id) ? "⭐️" : "☆"}
+</span>
+🎥 {lec.title}
                             </td>
                             <td className="px-4 py-2 text-gray-500 dark:text-gray-300">
                               {Math.ceil((lec.asset?.time_estimation || 0) / 60)} min
@@ -205,7 +252,7 @@ function App() {
                                 className="form-checkbox h-5 w-5 text-blue-600"
                                 checked={isCompleted}
                                 onChange={() => toggleCompletion(lec.id)}
-                              />
+                                                              />
                             </td>
                           </tr>
                         );
