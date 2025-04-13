@@ -69,27 +69,35 @@ const LectureTable = ({
                       return (
                         <tr
                           key={lec.id}
-                          className={`${
-                            isCompleted
+                          className={`${isCompleted
                               ? "bg-green-100 dark:bg-green-900 hover:bg-green-200 dark:hover:bg-green-800"
                               : "bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700"
-                          } transition-all duration-200`}
+                            } transition-all duration-200`}
                         >
                           <td className="px-4 py-2 text-gray-700 dark:text-gray-100">
-                          <span
-  className="cursor-pointer mr-2"
-  onClick={(e) => {
-    e.stopPropagation(); // prevent parent click
-    toggleBookmark(lec.id);
-  }}
->
-  {bookmarkedLectures.includes(lec.id) ? "⭐️" : "☆"}
-</span>
+                            <span
+                              className="cursor-pointer mr-2"
+                              onClick={(e) => {
+                                e.stopPropagation(); // prevent parent click
+                                toggleBookmark(lec.id);
+                              }}
+                            >
+                              {bookmarkedLectures.includes(lec.id) ? "⭐️" : "☆"}
+                            </span>
                             🎥 {lec.title}
                           </td>
                           <td className="px-4 py-2 text-gray-500 dark:text-gray-300">
-                            {Math.ceil((lec.asset?.time_estimation || 0) / 60)} min
+                            <a
+                              href={`https://www.udemy.com/course/aws-certified-solutions-architect-associate-saa-c03/learn/lecture/${lec.id}#overview`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-600 hover:underline dark:text-blue-400"
+                              onClick={(e) => e.stopPropagation()} // prevent collapse toggle
+                            >
+                              {Math.ceil((lec.asset?.time_estimation || 0) / 60)} min
+                            </a>
                           </td>
+
                           <td className="px-4 py-2">
                             <input
                               type="checkbox"

@@ -1,14 +1,13 @@
 import React from "react";
 
 const ProgressBar = ({ completedCount, totalLectures, completionPercent, completedTimeHours, totalTimeHours }) => {
-    return (
+  return (
     <div className="mb-6 sticky top-0 bg-gray-50 dark:bg-gray-900 py-4 z-10">
       <h2 className="text-xl font-semibold text-center mb-2">
-        Progress: {completedCount}/{totalLectures} lectures completed ({completionPercent}%)
-        <p className="text-center text-md text-gray-600 dark:text-gray-300">
-  ⏱ Time completed: {completedTimeHours} / {totalTimeHours} hours
-</p>
 
+        <p className="text-center text-md font-bold text-blue-600 dark:text-blue-400">
+          🎯 {completionPercent}% Done  ( {completedTimeHours} / {totalTimeHours} hours )
+        </p>
       </h2>
       <div className="w-full bg-gray-300 dark:bg-gray-700 rounded-full h-4">
         <div
@@ -19,5 +18,6 @@ const ProgressBar = ({ completedCount, totalLectures, completionPercent, complet
     </div>
   );
 };
+
 
 export default ProgressBar;
