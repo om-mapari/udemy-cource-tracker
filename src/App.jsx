@@ -22,7 +22,7 @@ function App() {
   const [showOnlyFavorites, setShowOnlyFavorites] = useState(false);
   const [collapsedChapters, setCollapsedChapters] = useState({});
   const [allCollapsed, setAllCollapsed] = useState(false);
-
+  
   useEffect(() => {
     fetch("/data.json")
       .then((res) => res.json())
@@ -38,16 +38,21 @@ function App() {
           }
         }
         setCourseContent(grouped);
-        const initCollapsed = {};
-        grouped.forEach((ch) => {
-          const allLecturesCompleted = ch.lectures.every((lec) =>
-            completedLectures.includes(lec.id)
-          );
-          initCollapsed[ch.id] = allLecturesCompleted; // true = collapsed
-        });
-        setCollapsedChapters(initCollapsed);
       });
   }, []);
+  
+  // Recalculate collapsedChapters when either courseContent or completedLectures change
+  useEffect(() => {
+    const initCollapsed = {};
+    courseContent.forEach((ch) => {
+      const allLecturesCompleted = ch.lectures.every((lec) =>
+        completedLectures.includes(lec.id)
+      );
+      initCollapsed[ch.id] = allLecturesCompleted;
+    });
+    setCollapsedChapters(initCollapsed);
+  }, [courseContent, completedLectures]);
+  
 
   useEffect(() => {
     localStorage.setItem("completedLectures", JSON.stringify(completedLectures));
@@ -124,10 +129,12 @@ function App() {
     : 0;
 
   return (
-    <div className={`min-h-screen ${darkMode ? "dark bg-gray-900" : "bg-white"}`}>
-      <div className="p-4 max-w-5xl mx-auto bg-gray-50 dark:bg-gray-900 shadow-lg rounded-lg text-gray-800 dark:text-gray-100">
+<div className={`min-h-screen ${darkMode ? "dark bg-gray-900" : "bg-white"}`}>
+  <div className="p-4 max-w-5xl mx-auto bg-gray-50 dark:bg-gray-900 shadow-lg rounded-lg text-gray-800 dark:text-gray-100 w-full">
         <Toaster position="top-right" toastOptions={{ duration: 2000 }} />
-
+        <h1 className="text-2xl font-bold mb-8 text-center text-gray-800 dark:text-gray-100">
+          📚 Udemy Course Tracker ✅
+        </h1>
         <Header
           darkMode={darkMode}
           setDarkMode={setDarkMode}
@@ -144,9 +151,7 @@ function App() {
           totalTimeHours={totalTimeHours}
         />
 
-        <h1 className="text-4xl font-bold mb-8 text-center text-gray-800 dark:text-gray-100">
-          📚 Udemy Course Tracker ✅
-        </h1>
+
         <LectureTable
           courseContent={courseContent}
           collapsedChapters={collapsedChapters}

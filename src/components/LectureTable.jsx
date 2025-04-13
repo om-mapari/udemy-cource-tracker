@@ -13,15 +13,15 @@ const LectureTable = ({
 }) => {
   const totalTimeForChapter = (lectures) =>
     lectures.reduce((total, lec) => total + (lec.asset?.time_estimation || 0), 0);
-  console.log('Toggling bookmark')
+
   return (
-    <div className="overflow-x-auto px-4 py-3">
-      <table className="min-w-full table-auto">
+    <div className="overflow-x-auto px-2 sm:px-4 py-3">
+      <table className="min-w-full table-auto text-xs sm:text-sm">
         <thead>
-          <tr className="text-sm font-medium text-gray-700 dark:text-gray-200 bg-gray-200 dark:bg-gray-800">
-            <th className="px-4 py-2 text-left">Lecture/Chapter Name</th>
-            <th className="px-4 py-2 text-left">Time (min)</th>
-            <th className="px-4 py-2 text-left">Mark Complete</th>
+          <tr className="font-medium text-gray-700 dark:text-gray-200 bg-gray-200 dark:bg-gray-800">
+            <th className="px-1 sm:px-4 py-2 text-left">Lecture/Chapter</th>
+            <th className="px-1 sm:px-4 py-2 text-left">Time</th>
+            <th className="px-1 sm:px-4 py-2 text-left">Complete</th>
           </tr>
         </thead>
         <tbody>
@@ -34,9 +34,9 @@ const LectureTable = ({
 
             return (
               <React.Fragment key={chapter.id}>
-                <tr className="bg-blue-200 dark:bg-blue-900 font-semibold text-lg">
+                <tr className="bg-blue-200 dark:bg-blue-900 font-semibold text-sm sm:text-base">
                   <td
-                    className="px-4 py-2 text-gray-700 dark:text-gray-100 cursor-pointer"
+                    className="px-1 sm:px-4 py-2 text-gray-700 dark:text-gray-100 cursor-pointer"
                     onClick={() =>
                       setCollapsedChapters((prev) => ({
                         ...prev,
@@ -46,13 +46,13 @@ const LectureTable = ({
                   >
                     {isCollapsed ? "📁" : "📂"} <strong>{chapter.title}</strong>
                   </td>
-                  <td className="px-4 py-2 text-gray-500 dark:text-gray-300">
+                  <td className="px-1 sm:px-4 py-2 text-gray-500 dark:text-gray-300">
                     {Math.ceil(chapterTotalTime / 60)} min
                   </td>
-                  <td className="px-4 py-2">
+                  <td className="px-1 sm:px-4 py-2">
                     <input
                       type="checkbox"
-                      className="form-checkbox h-5 w-5 text-blue-600"
+                      className="form-checkbox h-4 w-4 sm:h-5 sm:w-5 text-blue-600"
                       checked={allLecturesCompleted}
                       onChange={(e) => {
                         e.stopPropagation();
@@ -69,16 +69,17 @@ const LectureTable = ({
                       return (
                         <tr
                           key={lec.id}
-                          className={`${isCompleted
+                          className={`${
+                            isCompleted
                               ? "bg-green-100 dark:bg-green-900 hover:bg-green-200 dark:hover:bg-green-800"
                               : "bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700"
-                            } transition-all duration-200`}
+                          } transition-all duration-200 text-xs sm:text-sm`}
                         >
-                          <td className="px-4 py-2 text-gray-700 dark:text-gray-100">
+                          <td className="px-1 sm:px-4 py-2 text-gray-700 dark:text-gray-100">
                             <span
                               className="cursor-pointer mr-2"
                               onClick={(e) => {
-                                e.stopPropagation(); // prevent parent click
+                                e.stopPropagation();
                                 toggleBookmark(lec.id);
                               }}
                             >
@@ -86,22 +87,21 @@ const LectureTable = ({
                             </span>
                             🎥 {lec.title}
                           </td>
-                          <td className="px-4 py-2 text-gray-500 dark:text-gray-300">
+                          <td className="px-1 sm:px-4 py-2 text-gray-500 dark:text-gray-300">
                             <a
                               href={`https://www.udemy.com/course/aws-certified-solutions-architect-associate-saa-c03/learn/lecture/${lec.id}#overview`}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="text-blue-600 hover:underline dark:text-blue-400"
-                              onClick={(e) => e.stopPropagation()} // prevent collapse toggle
+                              onClick={(e) => e.stopPropagation()}
                             >
                               {Math.ceil((lec.asset?.time_estimation || 0) / 60)} min
                             </a>
                           </td>
-
-                          <td className="px-4 py-2">
+                          <td className="px-1 sm:px-4 py-2">
                             <input
                               type="checkbox"
-                              className="form-checkbox h-5 w-5 text-blue-600"
+                              className="form-checkbox h-4 w-4 sm:h-5 sm:w-5 text-blue-600"
                               checked={isCompleted}
                               onChange={() => toggleCompletion(lec.id)}
                             />
